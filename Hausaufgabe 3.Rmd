@@ -1,0 +1,104 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+library(tidyverse)
+library(arules)
+library(arulesViz)
+```
+
+#Einen Datensatz erstellen aus drei:
+
+```{r}
+books <- BX_Books %>%
+  select(ISBN, `Book-Title`, `Book-Author`, `Year-Of-Publication`, Publisher)
+rm(BX_Books)
+users <- BX_Users %>%
+  mutate(Age = as.numeric(Age))
+rm(BX_Users)
+ratings <- BX_Book_Ratings %>%
+  left_join(books)
+rm(BX_Book_Ratings)
+ratings <- ratings %>%
+  filter(!is.na(`Book-Title`))
+
+users <- users %>%
+  filter(!is.na(Age)) %>%
+  mutate(country = str_remove(Location,",*,")) %>%
+  filter(country != "")
+all <- ratings %>%
+  left_join(users) %>%
+  select(-Location)
+
+write.csv(all, "all.csv")
+```
+
+```{r}
+all <- read_csv("all.csv")
+```
+#HAUSAUFGABE 3
+
+#1. Erstellen Sie eine Analyse, bei der nicht die Bücher, sondern die Autoren in den Transaktionen enthalten sind
+
+```{r}
+  i <- split(all$`Book-Author`, all$`User-ID`)
+txn <- as(i, "transactions")
+basket_rules <- apriori(txn, parameter = list(sup = 0.0015, conf = 0.001,minlen = 2, target = "rules" ))
+```
+```{r}
+myRules_Direct <- as(basket_rules, "data.frame")
+basket_rules_hi <- head(basket_rules, by ="lift",100)
+head(myRules_Direct, 20)
+```
+```{r}
+plot(basket_rules_hi, method = "graph", main= "Autoren")
+```
+
+```{r}
+plot(basket_rules_hi, method = "graph", main= "Autoren", engine = "interactive")
+```
+
+#2. Fällt Ihnen etwas in der Datenqualität auf?
+
+- Im Vergleich zu den Büchern, gibt es mehr Bücher als Autoren
+- 70461 Regel insgesamt, im Vergleich dazu hatten Bücher nur 97 Regel
+- Laut der Grafik beträgt die Support variierend von 0.002 bis 0.02, Lift von 84.845 bis 121.012
+- Tim LaHeye/ Tim Lahaye und SOPHIE KENSELLA/ Sophie Kensella sind vermutlich Rechtschreibfehler.
+
+#3. Wie könnte man das mit regulären Ausdrücken beheben?
+- 2 von den 3 Clustern könnte man "ignorieren", da die vermutlich nicht korrekt sind. Alle Autoren sind warscheinlich in einem großen Cluster, anders als bei den Büchern.
+- Da manche Autoren mehrere Bücher geschrieben haben, ist die Büchermenge auch wesentlich höher als die Autoren.
+
+
+#4. Wie kann man nun noch sicherstellen, dass nur die Autoren weiterempfohlen werden, deren Bücher man auch (mehrheitlich) gut fand?
+
+
+```{r}
+(Autor_Ratings <- all%>%
+  group_by(`Book-Author`) %>%
+  filter(`Book-Rating`>5) %>%
+  mutate(number_of_ratings = n()) %>%
+  select(`Book-Author`,`Book-Title`,number_of_ratings,`User-ID`) %>%
+  filter(number_of_ratings>1000)%>%
+  unique()) 
+```
+```{r}
+i2 <- split(Autor_Ratings$`Book-Author`, Autor_Ratings$`User-ID`)
+txn2 <- as(i2, "transactions")
+basket_rules2 <- apriori(txn2, parameter = list(sup = 0.0015, conf = 0.001,minlen = 2, target = "rules" ))
+```
+```{r}
+myRules_Direct2 <- as(basket_rules, "data.frame")
+basket_rules_hi2 <- head(basket_rules2, by ="lift",100)
+head(myRules_Direct2, 20)
+```
+#5. Welche anderen Features wären sinnvoll?
+
+- Alter der Leser
+- Wohnland der Leser
+- 
+
+
