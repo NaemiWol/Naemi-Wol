@@ -1,0 +1,62 @@
+---
+title: "Hausaufgabe 1"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+BX_Users <- read_delim("BX-Users.csv", ";", 
+    escape_double = FALSE, col_types = cols(Age = col_number()), 
+    trim_ws = TRUE)
+BX_Books <- read_delim("BX-Books.csv", ";", 
+    escape_double = FALSE, trim_ws = TRUE)
+BX_Book_Ratings <- read_delim("BX-Book-Ratings.csv", 
+    ";", escape_double = FALSE, trim_ws = TRUE)
+```
+
+#HAUSAUFGABEN
+
+#Welche Bücher sind am besten bewertet?
+
+
+```{r}
+BX_Book_Ratings %>%
+  filter(`Book-Rating` > 0) %>%
+  group_by(ISBN) %>%
+  summarise(Durchschnittsbewertung = mean(`Book-Rating`),Anzahl = n()) %>%
+  arrange(desc(Durchschnittsbewertung), desc(Anzahl))
+```
+
+# Welche Autoren sind am besten bewertet?
+
+```{r}
+BX_Book_Ratings %>%
+  left_join(BX_Books) %>%
+  group_by(`Book-Author`) %>%
+  summarise(Durchschnittsbewertung = mean(`Book-Rating`),Anzahl = n()) %>%
+  arrange(desc(Durchschnittsbewertung), desc(Anzahl))
+```
+
+# Welcher Verlag hat die besten Bücher?
+
+```{r}
+BX_Book_Ratings %>%
+  left_join(BX_Books) %>%
+  group_by(Publisher) %>%
+  filter(`Book-Rating` > 0) %>%
+  summarise(Durchschnittsbewertung = mean(`Book-Rating`), AnzahlBewertungen = n()) %>%
+  arrange(desc(Durchschnittsbewertung), desc(AnzahlBewertungen))
+```
+
+
+
+
+
+
+
+
+

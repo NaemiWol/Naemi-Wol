@@ -1,0 +1,87 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+install.packages("tidyverse")
+library(tidyverse)
+```
+
+#1. Gibt es eine lineare Beziehung zwischen Anzahl Bücher pro Publisher und Anzahl Ratings, die die Bücher eines Publishers erhalten? (hier müssen Sie wieder etwas Data Wrangling betreiben)
+
+##Unabhängie und abhängige Variable festlegen:
+
+Anzahl Bücher pro Publisher:
+
+```{r}
+(Anzahl_Bücher1 <- BX_Books%>%
+  group_by(Publisher) %>%
+  summarise(Anzahl_Bücher = n())%>%
+  arrange(desc(Anzahl_Bücher))%>%
+  unique())
+```
+
+Anzahl Ratings, die die Bücher eines Publishers erhalten:
+
+```{r}
+ratings <- BX_Book_Ratings%>%
+  left_join(BX_Books)
+```
+
+```{r}
+(Anzahl_Ratings1 <- ratings %>%
+  group_by(Publisher)%>%
+  mutate (Anzahl_Ratings = n()) %>%
+  filter(!is.na(Publisher))%>%
+  select(Publisher, Anzahl_Ratings)%>%
+  arrange(desc(Anzahl_Ratings))%>%
+  unique())
+```
+Dataframe von den beiden Variablen:
+
+```{r}
+(BookvsRatings <- Anzahl_Bücher1%>%
+  left_join(Anzahl_Ratings1)%>%
+  select(Anzahl_Bücher,Anzahl_Ratings))
+```
+
+```{r}
+fit <- lm(BookvsRatings$Anzahl_Ratings~BookvsRatings$Anzahl_Bücher)
+```
+
+```{r}
+plot(BookvsRatings)
+abline(fit)
+```
+```{r}
+summary(fit)
+```
+##ANTWORT
+
+#Es  gibt keine lineare Beziehung zwischen Anzahl Bücher pro Publisher und Anzahl Ratings, die die Bücher eines Publishers erhalten. Der Median ist sehr hoch, daher zu große Abweichungen von der Linie. R-Squared ist mit 0,757 auch nicht besonders gut.
+
+   
+#2. Haben ältere Bücher mehr Ratings, weil sie mehr Zeit haben, um Ratings zu sammeln? 
+
+Dataframe der Anzahl von Ratings der Bücher:
+
+```{r}
+(Anzahl_Ratings2 <- ratings%>%
+  group_by(ISBN)%>%
+  mutate(Anzahl_Ratings_nach_ISBN = n())%>%
+  select(ISBN,Anzahl_Ratings_nach_ISBN))
+```
+Dataframe von den zwei Variablen BX_Books und Anzahl_Ratings2:
+
+```{r}
+(Tabelle <-BX_Books%>%
+  left_join(Anzahl_Ratings2)%>%
+  select(`Year-Of-Publication`,Anzahl_Ratings_nach_ISBN)%>%
+  arrange(desc(`Year-Of-Publication`)))
+```
+
+##ANTWORT
+#Jüngere Bücher haben mehr Bewertungen als ältere, daher ist die Annahme flasch.
+
+
