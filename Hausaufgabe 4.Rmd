@@ -1,0 +1,77 @@
+---
+title: "Hausaufgabe 4"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(e1071)
+library(caret)
+library(pROC)
+```
+
+#HAUSAUFGABE 4
+#Bitte erstellen Sie ein Notebook mit weiteren Features (Alter, Geschlecht und Klasse sind als Beispiel in meinem Notebook auf GitHub)
+
+#Notebook: Survived, pclass, fare, Boat:
+
+```{r}
+(titanic.df <-titanic %>%
+  select(survived,pclass,fare, boat))
+```
+
+```{r}
+titanic.df <- titanic.df %>%
+  mutate(boat = as.numeric(boat))
+```
+
+#Alle NA's rausnehmen:
+
+```{r}
+titanic.df <- na.omit(titanic.df)
+```
+
+```{r}
+titanic.df <- titanic.df %>%
+  mutate(fare = as.numeric(fare))
+```
+#Einteilung in Training und Testing mit der Zufallszahl 100:
+
+```{r}
+set.seed(100)
+inTrain <- createDataPartition(
+  y = titanic.df$pclass,
+  p = .8,
+  list = FALSE)
+training <- titanic.df[ inTrain,]
+testing  <- titanic.df[-inTrain,]
+```
+#Training = 320 ; Testing = 78
+
+```{r}
+model <- svm(pclass ~ ., data = training)
+summary(model)
+pred <- predict(model, testing[,-1], probability = FALSE)
+```
+# Mir wird folgender Fehler angezeigt: Fehler in if (any(co)) { : Fehlender Wert, wo TRUE/FALSE nötig ist
+#Ich habe bei stackoverflow keine hilfreiche Lösung für das Problem gefunden...
+
+
+```{r}
+(test.results <- cbind(pred, testing))
+```
+
+
+```{r}
+library(pROC)
+pROC_obj <- roc(test.results$pclass, test.results$pred,
+            smoothed = TRUE,
+            ci=TRUE, ci.alpha=0.9, stratified=FALSE,
+            plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
+            print.auc=TRUE, show.thres=TRUE)
+```
+
+#Beobachtung: 
+- Die Kurve flacht nicht so schnell ab, wie in Ihrem Beispiel
+- 0,861 ist ein guter Wert. Ab 0,75 kann man von einem guten Ergbniss sprechen
+
