@@ -1,0 +1,94 @@
+---
+title: "Hausaufgabe 5"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(cluster)
+library(caret)
+```
+
+#Versuchen Sie die Leser aus dem Buch-Datenset zu clustern: Welche Bücher gehören in welches Cluster?
+
+```{r}
+all <- read_csv("all.csv")
+```
+#Nur einen Teil vom Datensatz auswählen
+
+```{r}
+users_books <- all %>%
+  group_by(`Book-Title`) %>%
+  mutate(no_of_books = n()) %>%
+  filter(no_of_books > 49) %>%
+  filter(`Book-Rating` > 9) %>%
+  select(`User-ID`, `Book-Title`)
+  
+```
+
+#Alle Bücher als Variablen erstellen und Nutzer für das jeweilige Buch mit einer 1 eintragen
+
+```{r}
+users_books <- users_books %>%
+  unique()
+books_wide <- users_books %>%
+  mutate(i = 1) %>%
+  spread(`Book-Title`,i,fill=0)
+```
+
+
+```{r}
+wss <- (nrow(books_wide)-1)*sum(apply(books_wide,2,var))
+  for (i in 2:10) wss[i] <- sum(kmeans(books_wide,
+                                       centers=i)$withinss)
+plot(1:10, wss, type="b", xlab="Number of Clusters",
+     ylab="Within groups sum of squares")
+```
+
+```{r}
+(books_wide.dist <- dist(books_wide, method="euclidean"))
+books_wide.hc <- hclust(books_wide.dist, method = "complete")
+plot(books_wide.hc)
+groups <- cutree(books_wide.hc, k=3) 
+rect.hclust(books_wide.hc, k=3, border="red")
+```
+
+
+```{r}
+(books.dist <- dist(books_wide, method="euclidean"))
+```
+
+```{r}
+books.hc <- hclust(books.dist, method = "complete")
+plot(books.hc)
+```
+
+```{r}
+k.means.fit <- kmeans(books_wide, 3) 
+```
+
+```{r}
+k.means.fit$size
+```
+
+```{r}
+clusplot(books_wide, k.means.fit$cluster, color=TRUE, shade=TRUE,
+labels=4, lines=0, main="K-means cluster plot")
+```
+
+
+```{r}
+table(books_wide$`User-ID`,k.means.fit$cluster)
+```
+
+```{r}
+result <- as.data.frame(cbind(books_wide$`user-ID`, k.means.fit&cluster))
+```
+
+
+
+
+
+
+
+
