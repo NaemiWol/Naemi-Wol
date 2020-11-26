@@ -9,6 +9,11 @@ library(e1071)
 library(caret)
 library(pROC)
 ```
+```{r}
+titanic <- read_delim("titanic.csv", ";", 
+    escape_double = FALSE, trim_ws = TRUE)
+```
+
 
 #HAUSAUFGABE 4
 #Bitte erstellen Sie ein Notebook mit weiteren Features (Alter, Geschlecht und Klasse sind als Beispiel in meinem Notebook auf GitHub)
@@ -19,10 +24,16 @@ library(pROC)
 (titanic.df <-titanic %>%
   select(survived,pclass,fare, boat))
 ```
+```{r}
+titanic.df%>%
+  group_by(fare)%>%
+  summarise(n = n())
+```
 
 ```{r}
-titanic.df <- titanic.df %>%
-  mutate(boat = as.numeric(boat))
+titanic.df%>%
+  group_by(boat)%>%
+  summarise(n = n())
 ```
 
 #Alle NA's rausnehmen:
@@ -31,16 +42,12 @@ titanic.df <- titanic.df %>%
 titanic.df <- na.omit(titanic.df)
 ```
 
-```{r}
-titanic.df <- titanic.df %>%
-  mutate(fare = as.numeric(fare))
-```
 #Einteilung in Training und Testing mit der Zufallszahl 100:
 
 ```{r}
 set.seed(100)
 inTrain <- createDataPartition(
-  y = titanic.df$pclass,
+  y = titanic.df$survived,
   p = .8,
   list = FALSE)
 training <- titanic.df[ inTrain,]
@@ -49,7 +56,7 @@ testing  <- titanic.df[-inTrain,]
 #Training = 320 ; Testing = 78
 
 ```{r}
-model <- svm(pclass ~ ., data = training)
+model <- svm(survived ~ ., data = training)
 summary(model)
 pred <- predict(model, testing[,-1], probability = FALSE)
 ```
@@ -64,12 +71,67 @@ pred <- predict(model, testing[,-1], probability = FALSE)
 
 ```{r}
 library(pROC)
-pROC_obj <- roc(test.results$pclass, test.results$pred,
+pROC_obj <- roc(test.results$survived, test.results$pred,
             smoothed = TRUE,
             ci=TRUE, ci.alpha=0.9, stratified=FALSE,
             plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
             print.auc=TRUE, show.thres=TRUE)
 ```
+
+#Naive Bayes ALgo
+
+```{r}
+my_training <- training %>%
+  mutate(survived = as.factor(survived))%>%
+  mutate(pclass = as.factor(pclass))%>%
+  mutate(fare = as.factor(fare)) %>%
+  mutate(boat = as.factor(boat))
+model <- naiveBayes(survived ~ ., data = my_training)
+model
+```
+
+```{r}
+my_testing <- testing %>%
+  mutate(pclass = as.factor(pclass))%>%
+  mutate(fare = as.factor(fare)) %>%
+  mutate(boat = as.factor(boat))
+pred <- predict(model, my_testing)
+table(pred, my_testing$survived)
+```
+
+
+```{r}
+(test.results <- cbind(pred, my_testing))
+```
+
+```{r}
+test.results <- test.results %>%
+  mutate(pred = as.numeric(pred))
+pROC_obj <- roc(as.numeric(as.character(test.results$survived)), test.results$pred,
+            smoothed = TRUE,
+            ci=TRUE, ci.alpha=0.9, stratified=FALSE,
+            plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
+            print.auc=TRUE, show.thres=TRUE)
+```
+
+#Decision Tree Algo
+
+```{r}
+library(rpart)
+library(rpart.plot)
+tree<- rpart(survived~., data = training, method = 'class')
+rpart.plot(tree)
+```
+
+
+
+
+```{r}
+test.results2 <- test.results %>%
+  mutate(pred = ifelse(pred>=0.5,1,0))
+table(test.results2$pred, testing$survived)
+```
+
 
 #Beobachtung: 
 - Die Kurve flacht nicht so schnell ab, wie in Ihrem Beispiel
