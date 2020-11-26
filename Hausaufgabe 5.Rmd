@@ -73,7 +73,7 @@ k.means.fit$size
 
 ```{r}
 clusplot(books_wide, k.means.fit$cluster, color=TRUE, shade=TRUE,
-labels=4, lines=0, main="K-means cluster plot")
+labels=0, lines=0, main="K-means cluster plot")
 ```
 
 
