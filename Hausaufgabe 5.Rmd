@@ -11,6 +11,7 @@ library(caret)
 
 #Versuchen Sie die Leser aus dem Buch-Datenset zu clustern: Welche Bücher gehören in welches Cluster?
 
+#Datensatz laden:
 ```{r}
 all <- read_csv("all.csv")
 ```
@@ -36,6 +37,7 @@ books_wide <- users_books %>%
   spread(`Book-Title`,i,fill=0)
 ```
 
+#Passende k Value finden:
 
 ```{r}
 wss <- (nrow(books_wide)-1)*sum(apply(books_wide,2,var))
@@ -45,12 +47,16 @@ plot(1:10, wss, type="b", xlab="Number of Clusters",
      ylab="Within groups sum of squares")
 ```
 
+#Der Punkt ist bei 2, daher habe ich k=2 gewählt
+
+#Distanz berechnen und Herarchie Clustering:
+
 ```{r}
 (books_wide.dist <- dist(books_wide, method="euclidean"))
 books_wide.hc <- hclust(books_wide.dist, method = "complete")
 plot(books_wide.hc)
-groups <- cutree(books_wide.hc, k=3) 
-rect.hclust(books_wide.hc, k=3, border="red")
+groups <- cutree(books_wide.hc, k=2) 
+rect.hclust(books_wide.hc, k=2, border="red")
 ```
 
 
@@ -62,6 +68,8 @@ rect.hclust(books_wide.hc, k=3, border="red")
 books.hc <- hclust(books.dist, method = "complete")
 plot(books.hc)
 ```
+
+#K means Clustering
 
 ```{r}
 k.means.fit <- kmeans(books_wide, 3) 
@@ -80,6 +88,8 @@ labels=0, lines=0, main="K-means cluster plot")
 ```{r}
 table(books_wide$`User-ID`,k.means.fit$cluster)
 ```
+
+#Clustern der Bücher anhand von User-ID
 
 ```{r}
 result <- as.data.frame(cbind(books_wide$`user-ID`, k.means.fit&cluster))
